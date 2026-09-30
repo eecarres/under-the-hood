@@ -106,7 +106,7 @@ top filled block again to clear it back to 0.</p>
 const LEVELS=["0 not assessed","1 aware","2 follows a guide","3 solo, common path",
   "4 debugs the mechanism","5 designs and teaches"];
 const canWrite = 'showOpenFilePicker' in window;   // Chromium: read + write in place
-let handle=null, text="", areas=[], dirty=false;
+let handle=null, text="", areas=[], dirty=false, edited=new Set();
 const PATH="~/.claude/learning";
 const exportBtn=document.getElementById("export");
 
@@ -121,14 +121,14 @@ function parse(src){
     m=line.match(/^\s+(name|notes|group|level|priority):\s*(.*)$/);
     if(m&&cur){
       const v=m[2].trim().replace(/^"|"$/g,"");
-      cur[m[1]] = m[1]==="level" ? +v : m[1]==="priority" ? v==="true" : v;
+      cur[m[1]] = m[1]==="level" ? (parseInt(v.replace(/^"/,""),10)||0) : m[1]==="priority" ? v==="true" : v;
     }
   }
   return out;
 }
 /* Rewrite only the level lines, so comments, notes and changelog survive untouched. */
 function serialize(){
-  const want=Object.fromEntries(areas.map(a=>[a.key,a.level]));
+  const want=Object.fromEntries(areas.filter(a=>edited.has(a.key)).map(a=>[a.key,a.level]));
   let key=null;
   const body=text.split("\n").map(line=>{
     const m=line.match(/^\s*-\s+key:\s*(\S+)/);
@@ -174,18 +174,18 @@ function radar(){
   sv.push(`<polygon class="area" points="${poly}"/>`);
   order.forEach((a,i)=>{
     const [x,y]=pt(i,R*a.level/MAX);
-    sv.push(`<circle class="pt${a.priority?" prio":""}" data-k="${a.key}" `+
+    sv.push(`<circle class="pt${a.priority?" prio":""}" data-k="${esc(a.key)}" `+
       `style="stroke:${GCOL[a.group]||'var(--fill)'}" `+
             `cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5"/>`);
     const [lx,ly]=pt(i,R+10), deg=ang(i)*180/Math.PI, flip=Math.cos(ang(i))<0;
-    sv.push(`<text class="lab${a.priority?" prio":""}" data-k="${a.key}" `+
+    sv.push(`<text class="lab${a.priority?" prio":""}" data-k="${esc(a.key)}" `+
       `style="fill:${GCOL[a.group]||'var(--mut)'}" `+
       `x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${flip?"end":"start"}" `+
       `dominant-baseline="middle" transform="rotate(${(flip?deg+180:deg).toFixed(1)} `+
       `${lx.toFixed(1)} ${ly.toFixed(1)})">${esc(short(a))}</text>`);
   });
   radarEl.innerHTML=sv.join("");
-  key.innerHTML=groups.map(g=>`<span><i style="background:${GCOL[g]||'var(--mut)'}"></i>${g}</span>`)
+  key.innerHTML=groups.map(g=>`<span><i style="background:${GCOL[g]||'var(--mut)'}"></i>${esc(g)}</span>`)
     .join("")+`<span><u>underlined</u> = priority gap</span>`;
 }
 
@@ -195,11 +195,11 @@ radarEl.addEventListener("click",e=>{
   if(!order.length) return;
   const b=radarEl.getBoundingClientRect(), sc=940/b.width;
   const dx=(e.clientX-b.left)*sc-CX, dy=(e.clientY-b.top)*sc-CY;
-  const d=Math.hypot(dx,dy); if(d>R+18) return;
+  const d=Math.hypot(dx,dy); if(d>R+6) return;
   let deg=Math.atan2(dy,dx)*180/Math.PI+90; if(deg<0) deg+=360;
   const a=order[Math.round(deg/(360/order.length))%order.length];
   const lvl=Math.min(MAX,Math.max(0,Math.round(d/R*MAX)));
-  a.level = a.level===lvl ? 0 : lvl;
+  a.level = a.level===lvl ? 0 : lvl; edited.add(a.key);
   dirty=true; save.disabled=false; msg.textContent=""; paint();
 });
 function hot(key,on){
@@ -220,7 +220,7 @@ function setView(isRadar){
 /* ---- render ---- */
 function render(){
   rows.innerHTML = areas.map(a=>`
-    <tr data-k="${a.key}" class="${a.priority?"prio":""}">
+    <tr data-k="${esc(a.key)}" class="${a.priority?"prio":""}">
       <td class=name>${esc(a.name)}${a.priority?"<b>priority gap</b>":""}<em>${esc(a.notes)}</em></td>
       <td class=bar>${[1,2,3,4,5].map(v=>
         `<button class=lv data-v="${v}" title="${LEVELS[v]}"></button>`).join("")}</td>
@@ -233,7 +233,7 @@ function render(){
 function paint(){
   radar();
   areas.forEach(a=>{
-    const tr=rows.querySelector(`tr[data-k="${a.key}"]`);
+    const tr=rows.querySelector(`tr[data-k="${esc(a.key)}"]`);
     tr.querySelectorAll(".lv").forEach(b=>b.classList.toggle("on",+b.dataset.v<=a.level));
     tr.querySelector(".lvl").textContent=a.level;
   });
@@ -241,7 +241,7 @@ function paint(){
 rows.addEventListener("click",e=>{
   const b=e.target.closest(".lv"); if(!b)return;
   const a=areas.find(x=>x.key===b.closest("tr").dataset.k), v=+b.dataset.v;
-  a.level = a.level===v ? 0 : v;
+  a.level = a.level===v ? 0 : v; edited.add(a.key);
   dirty=true; save.disabled=false; msg.textContent=""; paint();
 });
 
@@ -325,7 +325,7 @@ save.onclick=async()=>{
       if(parse(fresh).length) text=fresh;
       const out=serialize();
       const w=await handle.createWritable(); await w.write(out); await w.close();
-      text=out; areas=parse(out); dirty=false; save.disabled=true;
+      text=out; areas=parse(out); edited.clear(); dirty=false; save.disabled=true;
       msg.textContent="saved to profile.yaml"; render(); return;
     }catch(err){ msg.textContent="could not write ("+err.message+"), downloading instead"; }
   } else {

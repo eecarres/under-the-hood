@@ -4,16 +4,20 @@ const src = fs.readFileSync(path.join(__dirname, "../assets/profile.html"), "utf
 const body = src.slice(src.indexOf("const esc"), src.indexOf("/* ---- radar"));
 const ctx = { document: { getElementById: () => ({}) } };
 vm.createContext(ctx);
-vm.runInContext(`var text="", areas=[]; ${body};
-  this.serialize=serialize; this.parse=parse; this.esc=esc; this.set=(t,a)=>{text=t; areas=a};`, ctx);
+vm.runInContext(`var text="", areas=[], edited=new Set(); ${body};
+  this.serialize=serialize; this.parse=parse; this.esc=esc;
+  this.set=(t,a,e)=>{text=t; areas=a; edited=new Set(e)};`, ctx);
 
-// row "b" was added to the file after the page loaded: its level must survive a save
-ctx.set('updated: x\nareas:\n  - key: a\n    level: 1\n    notes: "hi <b>"\n  - key: b\n    level: 2\n',
-        [{ key: "a", level: 3 }]);
+// page edited "a"; the agent changed "b" on disk meanwhile; "c" appeared after load
+ctx.set('updated: x\nareas:\n  - key: a\n    level: 1\n    notes: "hi <b>"\n' +
+        '  - key: b\n    level: 4\n  - key: c\n    level: 2  # gut feel\n',
+        [{ key: "a", level: 3 }, { key: "b", level: 1 }], ["a"]);
 const out = ctx.serialize();
 const checks = {
   "edited level written": /key: a\n    level: 3/.test(out),
-  "unknown row untouched": /key: b\n    level: 2/.test(out),
+  "unedited row keeps disk value": /key: b\n    level: 4/.test(out),
+  "unknown row untouched": /key: c\n    level: 2  # gut feel/.test(out),
+  "commented level parses": ctx.parse(out)[2].level === 2,
   "no undefined": !out.includes("undefined"),
   "notes parsed": ctx.parse(out)[0].notes === "hi <b>",
   "html escaped": ctx.esc('<&"') === "&lt;&amp;&quot;",
