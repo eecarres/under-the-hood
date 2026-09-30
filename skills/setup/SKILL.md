@@ -6,9 +6,9 @@ description: First-time setup (and resume) of the under-the-hood learning profil
 # Setup
 
 Build the user's first learning profile in a fixed sequence of steps. Run the steps **in order,
-one at a time**, and write each answer to the profile **before** moving to the next step. That
-way an interrupted setup resumes at the first step whose field is still empty, and nothing is
-decided twice.
+one at a time**. After each step, write its answer to the profile and set `setup_step:` to that
+step's number, in the same write. An interrupted setup resumes at step `setup_step + 1`, so
+nothing is decided twice - even when the answer was the default or deliberately empty.
 
 Files, all under `~/.claude/learning/`:
 
@@ -106,7 +106,7 @@ exact block you would add: `${CLAUDE_PLUGIN_ROOT}/assets/claude-md-block.md`, ke
 header and only the sections they enabled (drop the section from its marker comment to the
 next marker). Ask permission. On yes, append it, or replace an existing
 `<!-- under-the-hood:start -->` ... `<!-- under-the-hood:end -->` block in place. Never touch
-anything outside the markers. On no, set `false` and tell them `/under-the-hood:explain`
+anything outside the markers, then set `claude_md_installed: true`. On no, set `false` and tell them `/under-the-hood:explain`
 still works on demand.
 
 ## Step 10 - finish -> `setup_completed: true`

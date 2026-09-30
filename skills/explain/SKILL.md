@@ -1,6 +1,6 @@
 ---
 name: explain
-description: Walk the user through a change or a system at the depth their learning profile says they need - a PR, a diff, a file, a subsystem or a bare concept. Use when they say "explain this PR", "walk me through", "how does X work here", "I want to understand", paste a PR/commit URL and ask what it does, or invoke /under-the-hood:explain. Reads ~/.claude/learning/profile.yaml first, explains from real code, then records what the session revealed.
+description: Walk the user through a change or a system at the depth their learning profile says they need - a PR, a diff, a file, a subsystem or a bare concept. Use when they say "explain this PR", "walk me through", "how does X work here", "I want to understand", paste a PR/commit URL and ask what it does, or invoke /under-the-hood:explain.
 argument-hint: "<PR url | commit | file | subsystem | concept>"
 ---
 

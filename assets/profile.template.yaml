@@ -14,7 +14,8 @@
 # A fabricated level is worse than an unknown one: it makes the agent skip an
 # explanation you actually needed. When unsure, leave it at 0.
 
-# Setup state - the setup skill fills these in order and resumes at the first gap.
+# Setup state - the setup skill records the last finished step and resumes after it.
+setup_step: 0
 setup_completed: false
 language: English
 explain_by_default: false
