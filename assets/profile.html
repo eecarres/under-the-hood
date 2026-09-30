@@ -110,13 +110,15 @@ let handle=null, text="", areas=[], dirty=false;
 const PATH="~/.claude/learning";
 const exportBtn=document.getElementById("export");
 
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
 /* ---- YAML: same flat shape the file documents, so a line parser is enough ---- */
 function parse(src){
   const out=[]; let cur=null;
   for(const line of src.split("\n")){
     let m=line.match(/^\s*-\s+key:\s*(\S+)/);
-    if(m){cur={key:m[1],level:0,priority:false,name:m[1],reference:"",group:""};out.push(cur);continue;}
-    m=line.match(/^\s+(name|reference|group|level|priority):\s*(.*)$/);
+    if(m){cur={key:m[1],level:0,priority:false,name:m[1],notes:"",group:""};out.push(cur);continue;}
+    m=line.match(/^\s+(name|notes|group|level|priority):\s*(.*)$/);
     if(m&&cur){
       const v=m[2].trim().replace(/^"|"$/g,"");
       cur[m[1]] = m[1]==="level" ? +v : m[1]==="priority" ? v==="true" : v;
@@ -132,7 +134,9 @@ function serialize(){
     const m=line.match(/^\s*-\s+key:\s*(\S+)/);
     if(m){key=m[1];return line;}
     if(key!=null && /^\s+level:\s*\d+/.test(line)){
-      const l=line.replace(/^(\s+level:\s*)\d+/,(_,p)=>p+want[key]); key=null; return l;
+      const v=want[key]; key=null;
+      if(v===undefined) return line;          // row added to the file after the page loaded
+      return line.replace(/^(\s+level:\s*)\d+/,(_,p)=>p+v);
     }
     return line;
   }).join("\n");
@@ -178,7 +182,7 @@ function radar(){
       `style="fill:${GCOL[a.group]||'var(--mut)'}" `+
       `x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${flip?"end":"start"}" `+
       `dominant-baseline="middle" transform="rotate(${(flip?deg+180:deg).toFixed(1)} `+
-      `${lx.toFixed(1)} ${ly.toFixed(1)})">${short(a)}</text>`);
+      `${lx.toFixed(1)} ${ly.toFixed(1)})">${esc(short(a))}</text>`);
   });
   radarEl.innerHTML=sv.join("");
   key.innerHTML=groups.map(g=>`<span><i style="background:${GCOL[g]||'var(--mut)'}"></i>${g}</span>`)
@@ -217,7 +221,7 @@ function setView(isRadar){
 function render(){
   rows.innerHTML = areas.map(a=>`
     <tr data-k="${a.key}" class="${a.priority?"prio":""}">
-      <td class=name>${a.name}${a.priority?"<b>priority gap</b>":""}<em>${a.reference}</em></td>
+      <td class=name>${esc(a.name)}${a.priority?"<b>priority gap</b>":""}<em>${esc(a.notes)}</em></td>
       <td class=bar>${[1,2,3,4,5].map(v=>
         `<button class=lv data-v="${v}" title="${LEVELS[v]}"></button>`).join("")}</td>
       <td class=lvl></td></tr>`).join("");

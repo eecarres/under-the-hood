@@ -33,6 +33,9 @@ something ready-made, here it is.
 /plugin install under-the-hood@under-the-hood
 ```
 
+The same plugin is also published in the `MewsSystems/mews-agent-plugins` marketplace
+(`/plugin install under-the-hood@mews-agent-plugins`); install it from one place only.
+
 Start a new session. A `SessionStart` hook notices there is no profile yet and offers
 `/under-the-hood:setup`, a guided 10-step setup: language, background (paste a CV or a LinkedIn
 URL if you like), areas discovered from your recent work in GitHub, Jira or Linear, optional

@@ -2,7 +2,7 @@
 # SessionStart hook. Reads the profile and tells the agent one of three things:
 #   no profile            -> run the setup skill before anything else
 #   setup_completed false -> resume the setup skill where it stopped
-#   setup completed       -> which language to explain in, and which modes are on
+#   setup completed       -> which language to explain in (the modes live in CLAUDE.md)
 # Whatever this prints on stdout is added to the session context.
 set -u
 PROFILE="${UNDER_THE_HOOD_PROFILE:-$HOME/.claude/learning/profile.yaml}"

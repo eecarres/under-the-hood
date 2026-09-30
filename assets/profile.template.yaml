@@ -24,13 +24,13 @@ updated: YYYY-MM-DD
 
 background:
   # What you already master. Explanations draw analogies from here.
-  home: []
+  home:
   # What you use but are not native in. Every tool gets glossed the first time.
-  non_native: []
+  non_native:
   # true = lead explanations with an analogy to `home`.
   analogies: true
 
-areas: []
+areas:
   # - key: containers
   #   name: Containers - images, layers, registries, runtimes
   #   group: Infrastructure
@@ -38,5 +38,5 @@ areas: []
   #   priority: true
   #   notes: ""
 
-changelog: []
+changelog:
   # - "YYYY-MM-DD  containers  0 -> 2  - built and debugged a multi-stage image unaided"
