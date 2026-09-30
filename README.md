@@ -29,7 +29,7 @@ something ready-made, here it is.
 ## Install
 
 ```
-/plugin marketplace add <owner>/under-the-hood
+/plugin marketplace add eecarres/under-the-hood
 /plugin install under-the-hood@under-the-hood
 ```
 
