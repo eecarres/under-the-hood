@@ -1,0 +1,42 @@
+# Learning profile - under-the-hood
+#
+# Source of truth for your skill levels. Edit it by hand, click levels in profile.html,
+# or let the agent update it as you work. Nothing here has to be right on day one.
+#
+# Levels:
+#   0  not assessed yet (explained as if it were 1)
+#   1  aware, no hands-on
+#   2  can follow a guide
+#   3  works solo on the common path
+#   4  debugs the uncommon path, knows the mechanism
+#   5  can design it and teach it
+#
+# A fabricated level is worse than an unknown one: it makes the agent skip an
+# explanation you actually needed. When unsure, leave it at 0.
+
+# Setup state - the setup skill fills these in order and resumes at the first gap.
+setup_completed: false
+language: English
+explain_by_default: false
+track_gaps: false
+claude_md_installed: false
+updated: YYYY-MM-DD
+
+background:
+  # What you already master. Explanations draw analogies from here.
+  home: []
+  # What you use but are not native in. Every tool gets glossed the first time.
+  non_native: []
+  # true = lead explanations with an analogy to `home`.
+  analogies: true
+
+areas: []
+  # - key: containers
+  #   name: Containers - images, layers, registries, runtimes
+  #   group: Infrastructure
+  #   level: 0
+  #   priority: true
+  #   notes: ""
+
+changelog: []
+  # - "YYYY-MM-DD  containers  0 -> 2  - built and debugged a multi-stage image unaided"

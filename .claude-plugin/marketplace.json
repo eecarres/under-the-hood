@@ -1,0 +1,7 @@
+{
+  "name": "under-the-hood",
+  "owner": { "name": "under-the-hood" },
+  "plugins": [
+    { "name": "under-the-hood", "source": "./", "description": "Learn what happens underneath while you work with an agent." }
+  ]
+}
