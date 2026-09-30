@@ -1,5 +1,7 @@
 # under-the-hood
 
+![A confused mechanic holding a rubber duck, looking under the hood of a car whose engine is made of Docker, Kubernetes, Python and TypeScript parts](docs/banner.webp)
+
 Agents let us ship more than ever. We fix things, build things, close tickets - and often
 could not say how any of it works underneath. The output grows; what we actually know does
 not. It feels like working harder while standing still in your career.
