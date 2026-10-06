@@ -1,6 +1,6 @@
 // under-the-hood mod: after each answered turn, a band above the prompt offers to explain it.
 //   Explain       -> submits a prompt that runs the explain skill, so the explanation joins the conversation
-//   Explain aside -> $.model.fork answers over the transcript without adding to it, shown in a pane
+//   Explain in forked session -> $.model.fork answers over the transcript without adding to it, shown in a pane
 // The fork has no tools, so the profile is read here and passed inside the prompt.
 // A specific topic goes through /under-the-hood:explain <topic>; the band covers "what we just did".
 // On by default: only `explain_band: false` in the profile hides the band (the setup skill asks).
@@ -92,9 +92,9 @@ export const register: Register = (on) => {
     if (!(await read($, offer)) || e.props.hasSurvey || e.props.isWorking) return theirs
     const { Box, Text, Button } = $.ui.resolve(e)
     const row = Box({ flexDirection: 'row', children: [
-      Text({ dimColor: true, children: ['Explain what just happened: '] }),
+      Text({ color: 'warning', bold: true, children: ['Under the Hood -> '] }),   // 'warning' is the theme's yellow
       Button({ key: 'here', label: 'Explain', variant: 'primary', onPress: () => explainHere($) }),
-      Button({ key: 'aside', label: 'Explain aside (fork)', onPress: () => explainAside($) }),
+      Button({ key: 'aside', label: 'Explain in forked session', onPress: () => explainAside($) }),
     ] })
     return theirs ? Box({ flexDirection: 'column', children: [row, theirs] }) : row
   })
