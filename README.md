@@ -27,6 +27,9 @@ something ready-made, here it is.
   agent offers one study session for `~/.claude/learning/backlog.md`.
 - **Explain band** (on by default) - after each answered turn, a row above the prompt offers to
   explain what just happened, either in the conversation or in a side pane (a tool-less fork).
+
+  ![The explain band above the Claude Code prompt: "Under the Hood ->" followed by the Explain and Explain in forked session buttons](docs/explain-band.png)
+
 - **A radar view** - `~/.claude/learning/profile.html`, a static page (no server) that draws the
   profile and lets you click levels back into the YAML.
 
