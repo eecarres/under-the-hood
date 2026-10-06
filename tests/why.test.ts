@@ -11,7 +11,6 @@ const PANE = {
 function stubBasics(on: any, profile: string | null) {
   on('ui.open', () => ({ value: undefined }))
   on('ui.close', () => ({ value: undefined }))
-  on('ui.invalidate', () => ({ value: undefined }))
   on('env.get', () => ({ value: '/home/me' }))
   on('fs.exists', () => ({ value: profile !== null }))
   on('fs.read', () => ({ value: profile ?? '' }))
@@ -46,7 +45,7 @@ test('forked: a null fork (cold cache) shows a fallback instead of nothing', asy
 test('this session: submits a prompt that invokes the explain skill', async ($, on) => {
   stubBasics(on, null)
   let submitted = ''
-  on('prompt.submit', ($, e) => { submitted = e.text; return {} })
+  on('prompt.submit', ($, e) => { submitted = e.text; return { value: undefined } })
 
   await $.command.run({ command: 'why', args: '' })
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })

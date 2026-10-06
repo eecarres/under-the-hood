@@ -42,7 +42,7 @@ function runHere($) {
   $.prompt.submit({
     text: 'Use the under-the-hood:explain skill on ' + (topic || 'what we just did in this conversation') + '.',
     asUser: true,
-  })
+  }).catch((err) => $.ui.toast('Could not start the explanation: ' + err.message))
 }
 
 export function register(on) {
