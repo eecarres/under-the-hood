@@ -1,5 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 
+import { isBandOn } from '../hooks/register.ts'
+
 const PANE = {
   plugin: 'under-the-hood',
   component: 'Pane',
@@ -20,12 +22,12 @@ const ON = 'language: English\n'   // no explain_band key: on by default
 const USAGE = { input_tokens: 0, output_tokens: 0, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 }
 const ANSWERED = (text: string) => ({ value: { isAnswered: true as const, text, usage: USAGE } })
 
-function stubBasics(on: any, profile: string | null) {
+function stubBasics(on: any, profile: string | null, readError?: string) {
   on('ui.open', () => ({ value: undefined }))
   on('ui.close', () => ({ value: undefined }))
   on('env.get', () => ({ value: '/home/me' }))
   on('fs.exists', () => ({ value: profile !== null }))
-  on('fs.read', () => ({ value: profile ?? '' }))
+  on('fs.read', () => (readError ? { deny: readError } : { value: profile ?? '' }))
   on('turn.complete', () => ({ text: 'done' }))
   on('ui.render', ($: any, e: any) => $.ui.resolve(e).Box({ key: 'engine' }))   // the engine's own drawing when the band yields
 }
@@ -133,4 +135,21 @@ test('the band stacks on what the plugins beneath drew instead of replacing it',
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
   expect(await ui.find({ key: 'here' })).toBeDefined()
   expect(await ui.find({ key: 'engine' })).toBeDefined()
+})
+
+test('explain_band: false is honored in every YAML 1.2 spelling, and nothing else turns the band off', async () => {
+  for (const v of ['false', 'False', 'FALSE', 'false  # hidden for now']) expect(isBandOn(`explain_band: ${v}\n`)).toBe(false)
+  for (const v of ['true', '"false"', 'falsey']) expect(isBandOn(`explain_band: ${v}\n`)).toBe(true)
+  expect(isBandOn('language: English\n')).toBe(true)
+})
+
+test('an unreadable profile still passes the turn on and falls back to the default band', async ($, on) => {
+  stubBasics(on, ON, 'EACCES: permission denied')
+  let logged = ''
+  on('ui.log', ($, e) => { logged = e.text; return { value: undefined } })
+
+  const result = await $.turn.complete(TURN)
+  expect(result).toEqual({ text: 'done' })   // the engine's stub ran, so next(e) was called
+  expect(logged).toContain('could not read')
+  expect(await (await $.ui.mount({ ...BAND, surface: 'terminal' })).find({ key: 'here' })).toBeDefined()
 })

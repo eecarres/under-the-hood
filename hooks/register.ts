@@ -30,9 +30,9 @@ export function buildForkPrompt(profile: string): string {
   ].join('\n')
 }
 
-// A top-level flag; absent (or no profile) means on.
+// A top-level flag; absent (or no profile) means on. YAML 1.2 spells false as false, False or FALSE.
 export function isBandOn(profile: string): boolean {
-  return !/^explain_band:[ \t]*false\b/m.test(profile)
+  return !/^explain_band:[ \t]*(false|False|FALSE)[ \t]*(#.*)?$/m.test(profile)
 }
 
 // The fork always resolves to a result, never null: branch on isAnswered, not on truthiness.
@@ -47,9 +47,15 @@ export function forkText(r: ModelForkResult): string {
   return `The fork could not answer: ${why}. Try again, or use Explain.`
 }
 
-async function readProfile($: EngineInterface): Promise<string> {
+// Never rejects: an unreadable profile behaves like a missing one (band on, level 1), and says so in the transcript.
+export async function readProfile($: EngineInterface): Promise<string> {
   const path = (await $.env.get('HOME')) + '/.claude/learning/profile.yaml'
-  return (await $.fs.exists(path)) ? await $.fs.read(path) : ''
+  try {
+    return (await $.fs.exists(path)) ? await $.fs.read(path) : ''
+  } catch (err) {
+    $.ui.log('could not read ' + path + ': ' + (err as Error).message)
+    return ''
+  }
 }
 
 async function explainAside($: EngineInterface) {
@@ -77,13 +83,16 @@ async function explainHere($: EngineInterface) {
 export const register: Register = (on) => {
   // No prompt.submit hook: the band hides itself while a turn runs (isWorking), and turn.complete re-decides.
   on('turn.complete', async ($, e, next) => {
-    if (!e.agentId) {   // subagent turns raise turn.complete too
-      const wasOwn = await read($, ownTurn)
-      await update($, ownTurn, () => false)
-      const show = e.reason === 'answer' && !wasOwn && isBandOn(await readProfile($))
-      await update($, offer, () => show)
+    try {
+      if (!e.agentId) {   // subagent turns raise turn.complete too
+        const wasOwn = await read($, ownTurn)
+        await update($, ownTurn, () => false)
+        const show = e.reason === 'answer' && !wasOwn && isBandOn(await readProfile($))
+        await update($, offer, () => show)
+      }
+    } finally {
+      return next(e)   // the plugins after this one see every turn, whatever happened above
     }
-    return next(e)
   })
 
   // The band is one slot shared by every plugin: draw what the plugins beneath drew too, never replace it.
