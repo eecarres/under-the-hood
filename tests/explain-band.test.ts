@@ -150,6 +150,7 @@ test('an unreadable profile still passes the turn on and falls back to the defau
 
   const result = await $.turn.complete(TURN)
   expect(result).toEqual({ text: 'done' })   // the engine's stub ran, so next(e) was called
-  expect(logged).toContain('could not read')
+  expect(logged).toBe('Could not read the learner profile; using defaults')
+  expect(logged).not.toContain('/home/me')
   expect(await (await $.ui.mount({ ...BAND, surface: 'terminal' })).find({ key: 'here' })).toBeDefined()
 })

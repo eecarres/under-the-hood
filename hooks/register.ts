@@ -47,13 +47,13 @@ export function forkText(r: ModelForkResult): string {
   return `The fork could not answer: ${why}. Try again, or use Explain.`
 }
 
-// Never rejects: an unreadable profile behaves like a missing one (band on, level 1), and says so in the transcript.
+// Never rejects: an unreadable profile behaves like a missing one (band on, level 1), and says so with a fixed line.
 export async function readProfile($: EngineInterface): Promise<string> {
   const path = (await $.env.get('HOME')) + '/.claude/learning/profile.yaml'
   try {
     return (await $.fs.exists(path)) ? await $.fs.read(path) : ''
-  } catch (err) {
-    $.ui.log('could not read ' + path + ': ' + (err as Error).message)
+  } catch {
+    $.ui.log('Could not read the learner profile; using defaults')   // no path or OS error in the transcript
     return ''
   }
 }
