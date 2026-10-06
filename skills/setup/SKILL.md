@@ -109,7 +109,16 @@ next marker). Ask permission. On yes, append it, or replace an existing
 anything outside the markers, then set `claude_md_installed: true`. On no, set `false` and tell them `/under-the-hood:explain`
 still works on demand.
 
-## Step 10 - finish -> `setup_completed: true`
+## Step 10 - explain band -> `explain_band`
+
+Ask whether to switch on the explain band. Describe it in two lines: after each answered turn, a row
+above the prompt offers **Explain** (runs `/under-the-hood:explain` on what was just done, so the
+explanation joins the conversation) and **Explain aside** (a tool-less fork answers in a side pane
+without adding to the conversation, and without updating the profile or backlog). Default: yes.
+Write `explain_band: true` or `false`. Say it takes effect from the next answered turn and can be
+switched by editing that line; a profile without the line shows the band.
+
+## Step 11 - finish -> `setup_completed: true`
 
 Set `setup_completed: true` and `updated:` to today. Then tell them, in three lines:
 

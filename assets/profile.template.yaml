@@ -20,6 +20,7 @@ setup_completed: false
 language: English
 explain_by_default: false
 track_gaps: false
+explain_band: true
 claude_md_installed: false
 updated: YYYY-MM-DD
 

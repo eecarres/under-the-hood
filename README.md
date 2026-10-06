@@ -25,6 +25,8 @@ something ready-made, here it is.
   an implementation decision, not only when you ask.
 - **Track gaps** (optional) - levels move on real evidence, and when you touch a weak area the
   agent offers one study session for `~/.claude/learning/backlog.md`.
+- **Explain band** (on by default) - after each answered turn, a row above the prompt offers to
+  explain what just happened, either in the conversation or in a side pane (a tool-less fork).
 - **A radar view** - `~/.claude/learning/profile.html`, a static page (no server) that draws the
   profile and lets you click levels back into the YAML.
 
@@ -39,7 +41,7 @@ The same plugin is also published in the `MewsSystems/mews-agent-plugins` market
 (`/plugin install under-the-hood@mews-agent-plugins`); install it from one place only.
 
 Start a new session. A `SessionStart` hook notices there is no profile yet and offers
-`/under-the-hood:setup`, a guided 10-step setup: language, background (paste a CV or a LinkedIn
+`/under-the-hood:setup`, a guided 11-step setup: language, background (paste a CV or a LinkedIn
 URL if you like), areas discovered from your recent work in GitHub, Jira or Linear, optional
 self-rating, and which behaviours to switch on. Nothing has to be right the first time -
 everything can be changed later.
@@ -49,6 +51,7 @@ everything can be changed later.
 | Piece | What it does |
 |---|---|
 | `hooks/session-start.sh` | Every session: no profile -> offer setup; unfinished -> offer to resume; done -> tell the agent which language to explain in. |
+| `hooks/register.ts` | The explain band, a Claude Code mod: hidden only when the profile says `explain_band: false`. |
 | `skills/setup` | Builds the profile step by step, writing each answer before the next question. |
 | `skills/explain` | Explains a named target at your depth, then updates the profile and backlog. |
 | `assets/claude-md-block.md` | The always-on contract, added to `~/.claude/CLAUDE.md` between markers only if you agree. |
