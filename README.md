@@ -21,6 +21,11 @@ something ready-made, here it is.
 - **Explanations at your depth** - `/under-the-hood:explain <PR | file | subsystem | concept>`
   reads the real code and explains what happens, why it is done that way, and what would break
   otherwise. Level 1 gets first principles; level 4 gets only what is surprising.
+- **Visual explanations** - for a PR or a subsystem, explain writes one interactive HTML page:
+  a tree of claims along the request path, each proved by a call tree, state machine, flow or
+  the real code lines, with what would break marked as risks. Comment on any line and paste the
+  response back. Needs `node`; the page runtime is vendored from
+  [html-plan](https://github.com/anthropics/claude-plugins-community/tree/main/html-plan) (MIT).
 - **Explain by default** (optional) - the same explanation rides along whenever the agent makes
   an implementation decision, not only when you ask.
 - **Track gaps** (optional) - levels move on real evidence, and when you touch a weak area the
@@ -54,6 +59,7 @@ everything can be changed later.
 | `hooks/register.ts` | The explain band, a Claude Code mod: hidden only when the profile says `explain_band: false`. |
 | `skills/setup` | Builds the profile step by step, writing each answer before the next question. |
 | `skills/explain` | Explains a named target at your depth, then updates the profile and backlog. |
+| `skills/explain/runtime` | The html-plan page runtime and its packer, copied unchanged (see `NOTICE.md`). |
 | `assets/claude-md-block.md` | The always-on contract, added to `~/.claude/CLAUDE.md` between markers only if you agree. |
 
 ## License
