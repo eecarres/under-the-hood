@@ -64,6 +64,12 @@ cite the real paths and identifiers. A list of unexplained key-value pairs is no
 
 Order the walkthrough by **the path a request actually takes**, not by the diff's file order.
 
+**Pick the shape.** When the target is a PR or a subsystem whose request path crosses two or
+more files, and `node` is available, write a visual explanation page. Read both
+`references/visual.md` (the tree, the blocks to use, the steps) and `references/blocks.md`
+(the syntax of every block) before writing it. Every other target, or a user who asks for the
+chat, gets the explanation in the chat.
+
 ## Step 4 - record what the session revealed
 
 Only if `track_gaps` is `true`.
