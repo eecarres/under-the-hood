@@ -32,11 +32,12 @@ export const HANDOFF = [
 const sh = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`
 const ps = (s: string) => `'${s.replace(/'/g, `''`)}'`
 
-// Windows terminals get PowerShell (the default there): `;` because Windows PowerShell 5.1 has no `&&`.
+// Windows terminals get PowerShell (the default there). Windows PowerShell 5.1 has no `&&`, so the
+// launch is gated on -PassThru, which returns the new location only when the change succeeded.
 // ponytail: cmd.exe is not covered; it would need its own quoting.
 export function forkCommand(cwd: string, sessionId: string, isWindows = false): string {
   return isWindows
-    ? `Set-Location -LiteralPath ${ps(cwd)}; claude --resume ${sessionId} --fork-session ${ps(EXPLAIN)}`
+    ? `if (Set-Location -LiteralPath ${ps(cwd)} -PassThru) { claude --resume ${sessionId} --fork-session ${ps(EXPLAIN)} }`
     : `cd ${sh(cwd)} && claude --resume ${sessionId} --fork-session ${sh(EXPLAIN)}`
 }
 

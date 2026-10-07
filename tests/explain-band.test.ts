@@ -112,9 +112,10 @@ test('Explain in new session on the terminal: a failed copy keeps the band up so
   expect(await (await $.ui.mount({ ...BAND, surface: 'terminal' })).find({ key: 'aside' })).toBeDefined()
 })
 
-test('the Windows fork command is PowerShell: Set-Location, doubled quotes, no &&', async () => {
+test('the Windows fork command is PowerShell: doubled quotes, launch gated on the location change, no &&', async () => {
   const cmd = forkCommand("C:\\Users\\me\\it's here", 'id', true)
-  expect(cmd).toContain(`Set-Location -LiteralPath 'C:\\Users\\me\\it''s here'; claude --resume id --fork-session `)
+  expect(cmd).toStartWith(`if (Set-Location -LiteralPath 'C:\\Users\\me\\it''s here' -PassThru) { claude --resume id --fork-session `)
+  expect(cmd.endsWith(' }')).toBe(true)
   expect(cmd).not.toContain('&&')
 })
 
