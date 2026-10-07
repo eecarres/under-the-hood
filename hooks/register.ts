@@ -1,33 +1,44 @@
 // under-the-hood mod: after each answered turn, a band above the prompt offers to explain it.
-//   Explain       -> submits a prompt that runs the explain skill, so the explanation joins the conversation
-//   Explain in forked session -> $.model.fork answers over the transcript without adding to it, shown in a pane
-// The fork has no tools, so the profile is read here and passed inside the prompt.
+//   Explain                -> submits a prompt that runs the explain skill, so the explanation joins the conversation
+//   Explain in new session -> the explanation runs in a session of its own, so this conversation stays on task:
+//     desktop:  one short turn here writes a handoff and offers it as a suggested-task chip (spawn_task);
+//               a mod cannot open a session or reach the desktop's ccd_session server, the model can
+//     terminal: copies `claude --resume <id> --fork-session ...`, a real fork of this transcript, to paste in a new tab
 // A specific topic goes through /under-the-hood:explain <topic>; the band covers "what we just did".
 // On by default: only `explain_band: false` in the profile hides the band (the setup skill asks).
 // State lives in $.state atoms, not module variables, so a hot reload keeps it.
 
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, ModelForkResult, Register } from 'claude-code'
-
-import type { Answer } from '../types'
-
-const PANE = 'under-the-hood-explain'
+import type { EngineInterface, Register, RenderSurface } from 'claude-code'
 
 const offer = atom({ plugin: 'under-the-hood', key: 'offer' } as const, false)
 const ownTurn = atom({ plugin: 'under-the-hood', key: 'ownTurn' } as const, false)
-const answer = atom({ plugin: 'under-the-hood', key: 'answer' } as const, null as Answer)
-const forkSeq = atom({ plugin: 'under-the-hood', key: 'forkSeq' } as const, 0)
 
-export function buildForkPrompt(profile: string): string {
-  return [
-    'Explain the mechanism underneath the most recent work in this conversation.',
-    'Use only what is already in this conversation: you have no tools. If something you would need is not here, say so.',
-    'Depth follows the learner profile below: level 0-1 from first principles, 2-3 straight to the mechanism, 4-5 only what is surprising.',
-    'Cover what actually happens, why it is done this way here, and what would break otherwise. Lead with an analogy from background.home if analogies is true.',
-    'Write in the profile\'s `language`. Keep it under 400 words.',
-    '',
-    profile ? 'Learner profile (YAML):\n' + profile : 'No learner profile found: explain at level 1.',
-  ].join('\n')
+const EXPLAIN = 'Use the under-the-hood:explain skill on what we just did in this conversation.'
+
+export const HANDOFF = [
+  'Hand the explanation of what we just did off to a new session; do not explain it here.',
+  'Call the mcp__ccd_session__spawn_task tool (load it with ToolSearch first if it is deferred) with:',
+  '- title: "Explain: <the topic in a few words>"',
+  '- tldr: one sentence on what the new session will explain',
+  '- prompt: a self-contained handoff that starts with "Use the under-the-hood:explain skill on the work summarised below."',
+  '  and then gives the new session everything it needs without this conversation: what was asked and what was done,',
+  '  the decisions taken and why, the repos, file paths, PRs, commands and resources involved, and what is still open.',
+  'Reply with one line saying the chip is ready. If the tool is not available here, say so in one line instead.',
+].join('\n')
+
+// Single quotes take everything literally in both shells; only the quote itself is escaped,
+// POSIX by closing, escaping and reopening, PowerShell by doubling.
+const sh = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`
+const ps = (s: string) => `'${s.replace(/'/g, `''`)}'`
+
+// Windows terminals get PowerShell (the default there). Windows PowerShell 5.1 has no `&&`, so the
+// launch is gated on -PassThru, which returns the new location only when the change succeeded.
+// ponytail: cmd.exe is not covered; it would need its own quoting.
+export function forkCommand(cwd: string, sessionId: string, isWindows = false): string {
+  return isWindows
+    ? `if (Set-Location -LiteralPath ${ps(cwd)} -PassThru) { claude --resume ${sessionId} --fork-session ${ps(EXPLAIN)} }`
+    : `cd ${sh(cwd)} && claude --resume ${sessionId} --fork-session ${sh(EXPLAIN)}`
 }
 
 // A top-level flag; absent (or no profile) means on. YAML 1.2 spells false as false, False or FALSE.
@@ -35,19 +46,7 @@ export function isBandOn(profile: string): boolean {
   return !/^explain_band:[ \t]*(false|False|FALSE)[ \t]*(#.*)?$/m.test(profile)
 }
 
-// The fork always resolves to a result, never null: branch on isAnswered, not on truthiness.
-export function forkText(r: ModelForkResult): string {
-  if (r.isAnswered) return r.text
-  const why = {
-    'nothing-to-fork': 'there is no answered turn to fork yet',
-    'api-error': 'the API returned an error',
-    'empty-reply': 'the fork replied without text',
-    'aborted': 'the call was interrupted',
-  }[r.reason]
-  return `The fork could not answer: ${why}. Try again, or use Explain.`
-}
-
-// Never rejects: an unreadable profile behaves like a missing one (band on, level 1), and says so with a fixed line.
+// Never rejects: an unreadable profile behaves like a missing one (band on), and says so with a fixed line.
 export async function readProfile($: EngineInterface): Promise<string> {
   const path = (await $.env.get('HOME')) + '/.claude/learning/profile.yaml'
   try {
@@ -58,27 +57,32 @@ export async function readProfile($: EngineInterface): Promise<string> {
   }
 }
 
-async function explainAside($: EngineInterface) {
-  const id = await update($, forkSeq, (n) => n + 1)
-  await update($, offer, () => false)
-  await update($, answer, () => null)
-  await $.ui.open({ id: PANE, title: 'Explain', focus: true, closeOnEscape: true })
-  const text = forkText(await $.model.fork({ prompt: buildForkPrompt(await readProfile($)) }))
-  if ((await read($, forkSeq)) === id) await update($, answer, () => text)   // a newer fork owns the pane
-}
-
-async function explainHere($: EngineInterface) {
+// A turn the band started: the band stays hidden after it, so it never offers to explain its own output.
+async function submitOwn($: EngineInterface, text: string) {
   await update($, offer, () => false)
   await update($, ownTurn, () => true)
   // Not awaited: submit resolves only when the turn starts.
-  $.prompt.submit({
-    text: 'Use the under-the-hood:explain skill on what we just did in this conversation.',
-    asUser: true,
-  }).catch(async (err: Error) => {
+  $.prompt.submit({ text, asUser: true }).catch(async (err: Error) => {
     await update($, ownTurn, () => false)
     $.ui.toast('Could not start the explanation: ' + err.message)
   })
 }
+
+async function explainElsewhere($: EngineInterface, surface: RenderSurface) {
+  if (surface !== 'terminal') return submitOwn($, HANDOFF)
+  // The band stays up until the copy lands, so a failed one can be retried.
+  try {
+    const command = forkCommand(await $.session.cwd(), await $.session.id(), (await $.env.get('OS')) === 'Windows_NT')
+    const copied = await $.ui.copy({ text: command, surface })
+    if (!copied.isCopied) return $.ui.toast('Could not copy the fork command: ' + copied.reason)
+  } catch (err) {
+    return $.ui.toast('Could not build the fork command: ' + (err as Error).message)
+  }
+  await update($, offer, () => false)
+  $.ui.toast('Fork command copied: paste it in a new terminal tab')
+}
+
+const explainHere = ($: EngineInterface) => submitOwn($, EXPLAIN)
 
 export const register: Register = (on) => {
   // No prompt.submit hook: the band hides itself while a turn runs (isWorking), and turn.complete re-decides.
@@ -103,18 +107,8 @@ export const register: Register = (on) => {
     const row = Box({ flexDirection: 'row', children: [
       Text({ color: 'warning', bold: true, children: ['Under the Hood -> '] }),   // 'warning' is the theme's yellow
       Button({ key: 'here', label: 'Explain', variant: 'primary', onPress: () => explainHere($) }),
-      Button({ key: 'aside', label: 'Explain in forked session', onPress: () => explainAside($) }),
+      Button({ key: 'aside', label: 'Explain in new session', onPress: (press) => explainElsewhere($, press.surface) }),
     ] })
     return theirs ? Box({ flexDirection: 'column', children: [row, theirs] }) : row
-  })
-
-  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Box, Text, Button, Markdown } = $.ui.resolve(e)
-    const text = await read($, answer)
-    if (text === null) return Box({ children: [Text({ children: ['Asking the fork...'] })] })
-    return Box({ flexDirection: 'column', children: [
-      Markdown({ key: 'answer', text: text.slice(0, 10000) }),
-      Button({ key: 'close', label: 'Close', hotkey: 'q', onPress: () => $.ui.close({ id: PANE }) }),
-    ] })
   })
 }
