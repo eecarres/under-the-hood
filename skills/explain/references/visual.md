@@ -8,11 +8,19 @@ user comment on any claim, call row or code line and copy the comments back as o
 ```
 ../runtime/htmlplan.css  htmlplan.js   ← link both from the page; pack inlines them
 ../runtime/pack.mjs                    ← lint + inline → one portable file (needs only node)
-blocks.md                              ← every block, with syntax. Read it before you write
 ```
 
-`blocks.md` is written for plans. Use it for **syntax only**; the tree, the words and the
-blocks to use come from this file.
+The block syntax reference was written for plans. Take only the **syntax** from it; the
+tree, the words and the blocks to use come from this file.
+
+## Contents
+
+- [The tree](#the-tree)
+- [Depth sets the tree](#depth-sets-the-tree)
+- [Blocks for explaining](#blocks-for-explaining)
+- [Words](#words)
+- [Steps](#steps)
+- [The response](#the-response)
 
 ## The tree
 
@@ -69,7 +77,10 @@ explanation proposes nothing and asks no decisions. Use `doc-mock` only when the
 screen or terminal output the user would see.
 
 Real over drawn: every exhibit cites a real path and line that exists at the commit you read,
-filled with `src=`/`lines=` (add `ref="<sha>"` for a merged PR).
+filled with `src=`/`lines=`. For a merged PR, add `ref="<sha>"` and make sure that commit is
+in the checkout first (`git cat-file -e <sha>`, else `git fetch origin <sha>`). Pack prints
+"no git ref … using the plain file" when it falls back to the working tree under that label:
+fetch the commit and pack again, so the page shows the code as it was at that commit.
 
 ## Words
 
