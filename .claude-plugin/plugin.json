@@ -1,6 +1,6 @@
 {
   "name": "under-the-hood",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Learn what happens underneath while you work with an agent: a skill profile, explanations at your depth, and a backlog of gaps worth studying.",
   "license": "MIT",
   "types": "./types/index.d.ts"

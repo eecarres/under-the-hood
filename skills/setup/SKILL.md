@@ -113,8 +113,9 @@ still works on demand.
 
 Ask whether to switch on the explain band. Describe it in two lines: after each answered turn, a row
 above the prompt offers **Explain** (runs `/under-the-hood:explain` on what was just done, so the
-explanation joins the conversation) and **Explain aside** (a tool-less fork answers in a side pane
-without adding to the conversation, and without updating the profile or backlog). Default: yes.
+explanation joins the conversation) and **Explain in new session** (the explanation runs in a session
+of its own: in the desktop app a suggested-task chip carries a handoff, in the terminal a
+`claude --resume <id> --fork-session` command is copied to paste in a new tab). Default: yes.
 Write `explain_band: true` or `false`. Say it takes effect from the next answered turn and can be
 switched by editing that line; a profile without the line shows the band.
 

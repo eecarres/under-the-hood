@@ -1,14 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { isBandOn } from '../hooks/register.ts'
-
-const PANE = {
-  plugin: 'under-the-hood',
-  component: 'Pane',
-  requestId: 'under-the-hood-explain',
-  viewport: { columns: 100, rows: 30 },
-  props: { title: 'Explain', isFocused: true, bodyColumns: 60, placement: 'inline', scroll: { offset: 0, bodyRows: 10 }, view: {} },
-} as const
+import { forkCommand, isBandOn } from '../hooks/register.ts'
 
 const BAND = {
   plugin: 'under-the-hood',
@@ -19,12 +11,8 @@ const BAND = {
 
 const TURN = { answer: 'done', durationMs: 1000, isAborted: false, turnId: 't1', reason: 'answer' } as const
 const ON = 'language: English\n'   // no explain_band key: on by default
-const USAGE = { input_tokens: 0, output_tokens: 0, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 }
-const ANSWERED = (text: string) => ({ value: { isAnswered: true as const, text, usage: USAGE } })
 
 function stubBasics(on: any, profile: string | null, readError?: string) {
-  on('ui.open', () => ({ value: undefined }))
-  on('ui.close', () => ({ value: undefined }))
   on('env.get', () => ({ value: '/home/me' }))
   on('fs.exists', () => ({ value: profile !== null }))
   on('fs.read', () => (readError ? { deny: readError } : { value: profile ?? '' }))
@@ -79,54 +67,39 @@ test('Explain submits the explain skill and does not offer to explain the explan
   expect(await after.find({ key: 'here' })).toBeUndefined()
 })
 
-test('Explain aside: profile goes into the fork prompt and the answer is drawn', async ($, on) => {
-  stubBasics(on, ON + 'language: Spanish\nareas:\n  - key: terraform\n    level: 2\n')
-  let sent = ''
-  on('model.fork', ($, e) => { sent = e.prompt; return ANSWERED('Terraform guarda estado...') })
-
-  await $.turn.complete(TURN)
-  const band = await $.ui.mount({ ...BAND, surface: 'terminal' })
-  await band.press({ key: 'aside' })
-
-  expect(sent).toContain('language: Spanish')
-  const pane = await $.ui.mount({ ...PANE, surface: 'terminal' })
-  expect(await pane.find({ key: 'answer' })).toBeDefined()
-})
-
-test('Explain aside: a fork that did not answer shows why instead of breaking the pane', async ($, on) => {
+test('Explain in new session on desktop: one turn here hands off to a spawn_task chip, then the band stays hidden', async ($, on) => {
   stubBasics(on, ON)
-  on('model.fork', () => ({ value: { isAnswered: false, reason: 'api-error', status: 529, error: 'overloaded' as const, usage: USAGE } }))
+  let submitted = ''
+  on('prompt.submit', ($, e) => { submitted = e.text; return { text: e.text } })
 
   await $.turn.complete(TURN)
-  const band = await $.ui.mount({ ...BAND, surface: 'terminal' })
-  await band.press({ key: 'aside' })
+  await (await $.ui.mount({ ...BAND, surface: 'desktop' })).press({ key: 'aside' })
+  expect(submitted).toContain('mcp__ccd_session__spawn_task')
+  expect(submitted).toContain('under-the-hood:explain')
 
-  const pane = await $.ui.mount({ ...PANE, surface: 'terminal' })
-  expect(JSON.stringify(await pane.find({ key: 'answer' }))).toContain('the API returned an error')
-})
-
-test('Explain aside: a late reply from an older fork does not replace the newer one', async ($, on) => {
-  stubBasics(on, ON)
-  let release = () => {}
-  const first = new Promise<void>((r) => { release = r })
-  let calls = 0
-  on('model.fork', async () => {
-    calls += 1
-    if (calls === 1) { await first; return ANSWERED('old') }
-    return ANSWERED('new')
-  })
-
-  await $.turn.complete(TURN)
-  const slow = (await $.ui.mount({ ...BAND, surface: 'terminal' })).press({ key: 'aside' })
   await $.turn.complete({ ...TURN, turnId: 't2' })
-  await (await $.ui.mount({ ...BAND, surface: 'terminal' })).press({ key: 'aside' })
-  release()
-  await slow
+  expect(await (await $.ui.mount({ ...BAND, surface: 'desktop' })).find({ key: 'aside' })).toBeUndefined()
+})
 
-  const pane = await $.ui.mount({ ...PANE, surface: 'terminal' })
-  const drawn = JSON.stringify(await pane.find({ key: 'answer' }))
-  expect(drawn).toContain('new')
-  expect(drawn).not.toContain('old')
+test('Explain in new session on the terminal: copies a fork of this session, no turn here', async ($, on) => {
+  stubBasics(on, ON)
+  let copied = ''
+  let submitted = false
+  on('session.cwd', () => ({ value: '/repo' }))
+  on('session.id', () => ({ value: 'abc-123' }))
+  on('ui.copy', ($, e) => { copied = e.text; return { value: { isCopied: true as const } } })
+  on('ui.toast', () => ({ value: undefined }))
+  on('prompt.submit', ($, e) => { submitted = true; return { text: e.text } })
+
+  await $.turn.complete(TURN)
+  await (await $.ui.mount({ ...BAND, surface: 'terminal' })).press({ key: 'aside' })
+  expect(copied).toBe(forkCommand('/repo', 'abc-123'))
+  expect(copied).toContain('--resume abc-123 --fork-session')
+  expect(submitted).toBe(false)
+})
+
+test('the fork command quotes a cwd with spaces and quotes so the shell takes it literally', async () => {
+  expect(forkCommand("/Users/me/it's here", 'id')).toContain(`cd '/Users/me/it'\\''s here' && `)
 })
 
 test('the band stacks on what the plugins beneath drew instead of replacing it', async ($, on) => {

@@ -26,9 +26,12 @@ something ready-made, here it is.
 - **Track gaps** (optional) - levels move on real evidence, and when you touch a weak area the
   agent offers one study session for `~/.claude/learning/backlog.md`.
 - **Explain band** (on by default) - after each answered turn, a row above the prompt offers to
-  explain what just happened, either in the conversation or in a side pane (a tool-less fork).
+  explain what just happened, either in the conversation or in a session of its own. In the
+  desktop app the second button offers a suggested-task chip carrying a handoff, so one click
+  opens an independent session; in the terminal it copies a `claude --resume <id> --fork-session`
+  command that forks this conversation in a new tab.
 
-  ![The explain band above the Claude Code prompt: "Under the Hood ->" followed by the Explain and Explain in forked session buttons](docs/explain-band.png)
+  ![The explain band above the Claude Code prompt: "Under the Hood ->" followed by the Explain and Explain in new session buttons](docs/explain-band.png)
 
 - **A radar view** - `~/.claude/learning/profile.html`, a static page (no server) that draws the
   profile and lets you click levels back into the YAML.
