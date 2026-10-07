@@ -98,6 +98,26 @@ test('Explain in new session on the terminal: copies a fork of this session, no 
   expect(submitted).toBe(false)
 })
 
+test('Explain in new session on the terminal: a failed copy keeps the band up so it can be retried', async ($, on) => {
+  stubBasics(on, ON)
+  let toast = ''
+  on('session.cwd', () => ({ value: '/repo' }))
+  on('session.id', () => ({ value: 'abc-123' }))
+  on('ui.copy', () => ({ value: { isCopied: false as const, reason: 'no clipboard' } }))
+  on('ui.toast', ($, e) => { toast = e.text; return { value: undefined } })
+
+  await $.turn.complete(TURN)
+  await (await $.ui.mount({ ...BAND, surface: 'terminal' })).press({ key: 'aside' })
+  expect(toast).toContain('Could not copy')
+  expect(await (await $.ui.mount({ ...BAND, surface: 'terminal' })).find({ key: 'aside' })).toBeDefined()
+})
+
+test('the Windows fork command is PowerShell: Set-Location, doubled quotes, no &&', async () => {
+  const cmd = forkCommand("C:\\Users\\me\\it's here", 'id', true)
+  expect(cmd).toContain(`Set-Location -LiteralPath 'C:\\Users\\me\\it''s here'; claude --resume id --fork-session `)
+  expect(cmd).not.toContain('&&')
+})
+
 test('the fork command quotes a cwd with spaces and quotes so the shell takes it literally', async () => {
   expect(forkCommand("/Users/me/it's here", 'id')).toContain(`cd '/Users/me/it'\\''s here' && `)
 })

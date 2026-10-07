@@ -115,7 +115,8 @@ Ask whether to switch on the explain band. Describe it in two lines: after each 
 above the prompt offers **Explain** (runs `/under-the-hood:explain` on what was just done, so the
 explanation joins the conversation) and **Explain in new session** (the explanation runs in a session
 of its own: in the desktop app a suggested-task chip carries a handoff, in the terminal a
-`claude --resume <id> --fork-session` command is copied to paste in a new tab). Default: yes.
+`claude --resume <id> --fork-session` command is copied to paste in a new tab: POSIX shell syntax
+on macOS and Linux, PowerShell on Windows). Default: yes.
 Write `explain_band: true` or `false`. Say it takes effect from the next answered turn and can be
 switched by editing that line; a profile without the line shows the band.
 

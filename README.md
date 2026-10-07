@@ -29,7 +29,7 @@ something ready-made, here it is.
   explain what just happened, either in the conversation or in a session of its own. In the
   desktop app the second button offers a suggested-task chip carrying a handoff, so one click
   opens an independent session; in the terminal it copies a `claude --resume <id> --fork-session`
-  command that forks this conversation in a new tab.
+  command (POSIX shells; PowerShell on Windows) that forks this conversation in a new tab.
 
   ![The explain band above the Claude Code prompt: "Under the Hood ->" followed by the Explain and Explain in new session buttons](docs/explain-band.png)
 

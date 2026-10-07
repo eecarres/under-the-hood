@@ -27,11 +27,17 @@ export const HANDOFF = [
   'Reply with one line saying the chip is ready. If the tool is not available here, say so in one line instead.',
 ].join('\n')
 
-// POSIX single quotes: nothing inside is expanded; a quote is closed, escaped and reopened.
+// Single quotes take everything literally in both shells; only the quote itself is escaped,
+// POSIX by closing, escaping and reopening, PowerShell by doubling.
 const sh = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`
+const ps = (s: string) => `'${s.replace(/'/g, `''`)}'`
 
-export function forkCommand(cwd: string, sessionId: string): string {
-  return `cd ${sh(cwd)} && claude --resume ${sessionId} --fork-session ${sh(EXPLAIN)}`
+// Windows terminals get PowerShell (the default there): `;` because Windows PowerShell 5.1 has no `&&`.
+// ponytail: cmd.exe is not covered; it would need its own quoting.
+export function forkCommand(cwd: string, sessionId: string, isWindows = false): string {
+  return isWindows
+    ? `Set-Location -LiteralPath ${ps(cwd)}; claude --resume ${sessionId} --fork-session ${ps(EXPLAIN)}`
+    : `cd ${sh(cwd)} && claude --resume ${sessionId} --fork-session ${sh(EXPLAIN)}`
 }
 
 // A top-level flag; absent (or no profile) means on. YAML 1.2 spells false as false, False or FALSE.
@@ -63,11 +69,16 @@ async function submitOwn($: EngineInterface, text: string) {
 
 async function explainElsewhere($: EngineInterface, surface: RenderSurface) {
   if (surface !== 'terminal') return submitOwn($, HANDOFF)
+  // The band stays up until the copy lands, so a failed one can be retried.
+  try {
+    const command = forkCommand(await $.session.cwd(), await $.session.id(), (await $.env.get('OS')) === 'Windows_NT')
+    const copied = await $.ui.copy({ text: command, surface })
+    if (!copied.isCopied) return $.ui.toast('Could not copy the fork command: ' + copied.reason)
+  } catch (err) {
+    return $.ui.toast('Could not build the fork command: ' + (err as Error).message)
+  }
   await update($, offer, () => false)
-  const copied = await $.ui.copy({ text: forkCommand(await $.session.cwd(), await $.session.id()), surface })
-  $.ui.toast(copied.isCopied
-    ? 'Fork command copied: paste it in a new terminal tab'
-    : 'Could not copy the fork command: ' + copied.reason)
+  $.ui.toast('Fork command copied: paste it in a new terminal tab')
 }
 
 const explainHere = ($: EngineInterface) => submitOwn($, EXPLAIN)
