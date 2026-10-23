@@ -15,12 +15,35 @@ tree, the words and the blocks to use come from this file.
 
 ## Contents
 
+- [The page skeleton](#the-page-skeleton)
 - [The tree](#the-tree)
 - [Depth sets the tree](#depth-sets-the-tree)
 - [Blocks for explaining](#blocks-for-explaining)
 - [Words](#words)
 - [Steps](#steps)
 - [The response](#the-response)
+
+## The page skeleton
+
+Start every page from this skeleton. The `<style>` line gives `body` the runtime's background,
+text color and font, so the page reads the same in light and dark when an Artifact host wraps
+it in a `body` of its own.
+
+```html
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<title>Two to four words</title>
+<link rel="stylesheet" href="htmlplan.css">
+<script src="htmlplan.js" defer></script>
+<style>body { background: var(--paper); color: var(--ink); font: inherit; }</style>
+<body>
+<header>…</header>
+<main><doc-plan>…</doc-plan></main>
+</body></html>
+```
+
+Set `lang` to the profile's `language`.
 
 ## The tree
 
