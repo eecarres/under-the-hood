@@ -26,6 +26,9 @@ something ready-made, here it is.
   the real code lines, with what would break marked as risks. Comment on any line and paste the
   response back. Needs `node`; the page runtime is vendored from
   [html-plan](https://github.com/anthropics/claude-plugins-community/tree/main/html-plan) (MIT).
+- **Session recap** - `/under-the-hood:recap` briefs you when you come back to a session you did
+  not watch: goal, what was done, how it works underneath, the live state of the branch, PR and
+  ticket, what you need to understand, blockers, and what it needs from you.
 - **Explain by default** (optional) - the same explanation rides along whenever the agent makes
   an implementation decision, not only when you ask.
 - **Track gaps** (optional) - levels move on real evidence, and when you touch a weak area the
@@ -62,6 +65,7 @@ everything can be changed later.
 | `hooks/register.ts` | The explain band, a Claude Code mod: hidden only when the profile says `explain_band: false`. |
 | `skills/setup` | Builds the profile step by step, writing each answer before the next question. |
 | `skills/explain` | Explains a named target at your depth, then updates the profile and backlog. |
+| `skills/recap` | Briefs you on the session so far, explaining at your depth and checking the live state. |
 | `skills/explain/runtime` | The html-plan page runtime and its packer, copied unchanged (see `NOTICE.md`). |
 | `assets/claude-md-block.md` | The always-on contract, added to `~/.claude/CLAUDE.md` between markers only if you agree. |
 
