@@ -45,7 +45,27 @@ Every claim in the recap is either one of these checked facts or labelled as unv
 
 ## Step 2 - write the recap
 
-Write in the profile's `language`, with these headings in this order:
+Write in the profile's `language`, with these headings in this order.
+
+**Make it findable by scrolling.** The user hunts for this message in a long transcript, and
+colour is the only thing that stands out at scroll speed. The message opens and closes with the
+same purple band, so it is visible from above and from below:
+
+```markdown
+🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪
+# 🧭 RECAP - <the goal in five words or fewer>
+🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪
+
+... the seven sections ...
+
+🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪
+```
+
+Each section is a `###` heading with its emoji: 📌 TL;DR, 🛠️ What was done, ⚙️ How it works
+underneath, 📊 Current state, 🧠 What you need to understand, 🚧 Blockers, 👉 What I need from
+you. Translate the heading words into the profile's `language`, never the band or the emoji. The
+band and `🧭 RECAP` belong to this skill alone: never use them in any other message, or they stop
+being a landmark.
 
 1. **TL;DR** - two lines: the goal (why this session exists) and where it stands now.
 2. **What was done** - the work in the order a request actually flows through it, not the order
